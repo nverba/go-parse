@@ -1,19 +1,38 @@
 var gulp = require('gulp');
 // var requireDir = require('require-dir')('./tasks');
-var parser = require('gulp-file-parser');
+var fileParser = require('gulp-file-parser');
 
-parser.addRule(/\#[\S]+/ig, function(tag) {
-    return "<span class=\"tag\">" + tag.substr(1) + "</span>";
-});
 
-var gulp_parse = parser({
-    name: 'gulp-jeml',
-    func: parser.render,
-    extension: '.go'
+var parseFuncs = fileParser({
+  name: 'gulp-jeml',
+  func: (body) => {
+    let funcs = body.match(/^func\s+(\w+).+$/mg);
+    funcs.map(func => {
+      let Ob = {};
+      Ob.FnName = func.match(/^func (\w+)/)[1];
+      Ob.public = (/[A-Z]/).test(Ob.FnName);
+      return Ob;
+    });
+
+    let structs = body.match(/^func\s\(.+\)/mg);
+    structs.map(struct => {
+      let Ob = {};
+      Ob.FnName = struct.match(/^func (\w+)/)[1];
+      Ob.public = (/[A-Z]/).test(Ob.FnName);
+      return Ob;
+    });
+
+      return 'funcs'
+  },
+  extension: '.go'
 });
 
 gulp.task('go', [], function () {
-    return gulp.src('./test.go')
-        .pipe(gulp_parse())
-        .pipe(gulp.dest('./dist'));
+  return gulp.src('./test.go')
+    .pipe(parseFuncs())
+    .pipe(gulp.dest('./dist'));
+});
+
+gulp.task('default', ['go'], function () {
+  // place code for your default task here
 });

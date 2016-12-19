@@ -11,7 +11,10 @@
   "dependencies": {
     "gulp": "^3.9.1",
     "gulp-file-parser": "0.0.1",
-    "require-dir": "^0.3.1",
-    "simple-text-parser": "^1.0.0"
+    "gulp-find": "0.0.10",
+    "require-dir": "^0.3.1"
+  },
+  "devDependencies": {
+    "gulp-replace": "^0.5.4"
   }
 }
