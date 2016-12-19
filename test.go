@@ -23,6 +23,60 @@
 		X-MisAuth-Theme
 		X-MisAuth-Redirect_to
 */
+
+
+func init() {
+	PermCheckerMap["apps"] = AppChecker{}
+}
+
+type AppChecker struct {}
+
+// GET /v1/apps/:id
+// check app authenticated and ids is an App belonging to the same client
+// this :id can either be the PK as string or Appid which is a url-friendly base64(uuid)
+func (ac AppChecker) GetOne(c *ctx.MisContext, ids string) {
+	if c.IsAppAuthed() {
+		log.Printf("perm_app.GetOne.IsAppAuthed:")
+		CheckApp(c, func(app *dbo.App) bool {
+			log.Printf("\tids=%s, app.Id=%d, app.Appid=%s",ids,app.Id, app.Appid)
+            apids := strconv.Itoa(app.Id)
+			r := ids == apids || ids == app.Appid
+            if ids == app.Appid {
+                c.UpdateParam("id", apids)
+            }
+            return r
+		})
+		return
+	}
+    log.Printf("GetOne.CheckAppForEncrypt:...")
+	CheckAppForEncrypt(c, func(app *dbo.App) bool {
+        log.Printf("CheckAppForEncrypt, ids=%s, app.Id=%d", ids, app.Id)
+		if ids == strconv.Itoa(app.Id) {
+			return true
+		}
+		return CheckAppForClient(c, ids, app.ClientId)
+	})
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package auth
 
 import (
