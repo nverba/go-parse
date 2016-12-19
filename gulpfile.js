@@ -13,6 +13,7 @@ var parseFuncs = fileParser({
       Ob.public = (/[A-Z]/).test(Ob.FnName);
       Ob.types  = func.match(/(\S+)(?:,)/g) || [];
       Ob.types.push(func.match(/(?:\w+\(.*?)(\w+\))/) ? func.match(/(?:\w+\(.*?)(\w+)(?:\))/)[1] : []);  // (?:\)
+      Ob.returnType = func.match(/\)\s+(\w+)\s+{/) ?  func.match(/\)\s+(\w+)\s+{/)[1] : false
       console.log(Ob)
       return Ob;
     });
@@ -25,6 +26,7 @@ var parseFuncs = fileParser({
       Ob.struct = struct.match(/func\s\(\w+\s(\w+)/)[1];
       Ob.types  = struct.match(/(\S+)(?:,)/g) || [];
       Ob.types.push(struct.match(/(?:\w+\(.*?)(\w+\))/) ? struct.match(/(?:\w+\(.*?)(\w+\))/)[1] : []);
+      Ob.returnType = struct.match(/\)\s+(\w+)\s+{/) ?  struct.match(/\)\s+(\w+)\s+{/)[1] : false
       console.log(Ob)
       return Ob;
     });
