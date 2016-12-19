@@ -9,6 +9,7 @@
   "author": "nverba",
   "license": "MIT",
   "dependencies": {
+    "del": "^2.2.2",
     "gulp": "^3.9.1",
     "gulp-file-parser": "0.0.1",
     "require-dir": "^0.3.1"
