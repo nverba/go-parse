@@ -15,15 +15,16 @@ var parseFuncs = map(function (code, filename) {
    */
 
   let funcs      = code.match(/^func\s+.+?{\s*$/mg) || [];
-  let structs    = code.match(/(?:type\s+)(\w+)(?:\s+struct)/mg) || [];
+  let structs    = code.match(/type\s+\w+\s+struct\s+(.|\n)+?}/mg) || [];
   let interfaces = code.match(/type\s+\w+\s+interface\s+(.|\n)+?}/mg) || [];
   let types      = code.match(/type\s+\w+\s+func.+$/mg) || [];
 
   // console.log(types)
   // Reduce array of struct matches to object of struct names with empty string value;
-  structs    = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
-  interfaces = interfaces.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)/)[1]]: val.match(/(?:type\s+\w+\s+interface\s{)+((\n|.)+?)(?:})/)[1] }), {}); 
-  types      = types.map(type => type.match(/(?:type\s+)(\w+\s+func.+$)/)[1])
+  structAttrs = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)/)[1]]: val.match(/(?:type\s+\w+\s+struct\s{)+((\n|.)+?)(?:})/)[1] }), {});
+  structs     = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
+  interfaces  = interfaces.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)/)[1]]: val.match(/(?:type\s+\w+\s+interface\s{)+((\n|.)+?)(?:})/)[1] }), {}); 
+  types       = types.map(type => type.match(/(?:type\s+)(\w+\s+func.+$)/)[1])
 
   funcs = funcs.map(func => {
 
@@ -66,9 +67,9 @@ var parseFuncs = map(function (code, filename) {
   let module_name = filename.match(/(?:.+\/)(\w+)(\.go)/)[1];
 
   output += `Module: ${ module_name } \n---------------------------------------------------------------------------------\n`
-  if (stringFuncs) { output += `Funcs: \n${ stringFuncs } \n` }
-  Object.keys(structs).forEach(struct_name => {
-    output += `Struct: ${ struct_name } \n${ structs[struct_name] }`                                           // structsTemplate(struct_name, structs[struct_name], 300);
+  if (stringFuncs) { output += `Funcs: \n ${ stringFuncs } \n` }
+  Object.keys(structs).forEach(struct_name => {  
+    output += `Struct: ${ struct_name } \n Attrs: ${ structAttrs[struct_name] } \n Methods ${ structs[struct_name] } \n\n`                                           // structsTemplate(struct_name, structs[struct_name], 300);
   });
   Object.keys(interfaces).forEach(interface_name => {
     output += `Interface: ${ interface_name } \n${ interfaces[interface_name] }`                                           // structsTemplate(struct_name, structs[struct_name], 300);
