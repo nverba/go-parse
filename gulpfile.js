@@ -3,11 +3,6 @@ var del         = require('del');
 var map         = require('vinyl-map');
 var concat      = require('gulp-concat');
 
-// TEMPLATES
-var mainTemplate    = require('./templates/main-graph-template.js');
-var funcsTemplate   = require('./templates/funcs-template.js');
-var structsTemplate = require('./templates/structs-template.js');
-
 var parseFuncs = map(function (code, filename) {
   // file contents are handed 
   // over as buffers 
@@ -61,15 +56,12 @@ var parseFuncs = map(function (code, filename) {
     }
   });
 
-  console.log('stringFuncs', stringFuncs);
-  console.log('structs', structs);
-
   let output = '';
   let module_name = filename.match(/(?:.+\/)(\w+)(\.go)/)[1];
 
-  if (stringFuncs) { output += funcsTemplate(stringFuncs, funcs.length * 15) }
+  if (stringFuncs) { output += (`Module: ${ module_name } \n\nFuncs: \n${ stringFuncs } \n`) }
   Object.keys(structs).forEach(struct_name => {
-    output += structsTemplate(struct_name, structs[struct_name], 300);
+    output += `Struct: ${ struct_name } \n${ structs[struct_name] }`                                           // structsTemplate(struct_name, structs[struct_name], 300);
   });
   return output;
 });
@@ -90,7 +82,6 @@ gulp.task('parse:go:funcs', [], function () {
     .pipe(parseFuncs)
     .on('error', console.error.bind(console))
     .pipe(concat('module.graphml'))
-    .pipe(wrapTemplate)
     .pipe(gulp.dest('./docs'));
 });
 
