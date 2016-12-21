@@ -14,11 +14,18 @@ var parseFuncs = map(function (code, filename) {
    * 
    */
 
-  let funcs   = code.match(/^func\s+.+?{\s*$/mg) || [];
-  let structs = code.match(/(?:type\s+)(\w+)(?:\s+struct)/mg) || [];
+  let funcs      = code.match(/^func\s+.+?{\s*$/mg) || [];
+  let structs    = code.match(/(?:type\s+)(\w+)(?:\s+struct)/mg) || [];
+  let interfaces = code.match(/type\s+\w+\s+interface\s+(.|\n)+?}/mg) || [];
+
+  // console.log('interfaces', filename, interfaces)
   
   // Reduce array of struct matches to object of struct names with empty string value;
   structs = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
+  interfaces = interfaces.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)/)[1]]: val.match(/(?:type\s+\w+\s+interface\s{)+((\n|.)+?)(?:})/)[1] }), {}); 
+  
+  console.log(interfaces)
+  
   funcs = funcs.map(func => {
 
     let firstParens = (match => match && match[1])(func.match(/(?:func\s+)(\(.+?\))/));
