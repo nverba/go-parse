@@ -1,11 +1,12 @@
-var gulp = require('gulp');
-var del = require('del');
-var map = require('vinyl-map');
-var ext_replace = require('gulp-ext-replace');
+var gulp        = require('gulp');
+var del         = require('del');
+var map         = require('vinyl-map');
+var concat      = require('gulp-concat');
 
 // TEMPLATES
-var mainTemplate = require('./templates/main-graph-template.js')
-var funcsTemplate = require('./templates/funcs-template.js')
+var mainTemplate    = require('./templates/main-graph-template.js');
+var funcsTemplate   = require('./templates/funcs-template.js');
+var structsTemplate = require('./templates/structs-template.js');
 
 var parseFuncs = map(function (code, filename) {
   // file contents are handed 
@@ -18,19 +19,23 @@ var parseFuncs = map(function (code, filename) {
    * 
    */
 
-  let funcs = code.match(/^func\s+.+?{\s*$/mg) || [];
-
+  let funcs   = code.match(/^func\s+.+?{\s*$/mg) || [];
+  let structs = code.match(/(?:type\s+)(\w+)(?:\s+struct)/mg) || [];
+  
+  // Reduce array of struct matches to object of struct names with empty string value;
+  structs = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
   funcs = funcs.map(func => {
 
-    let firstParens = func.match(/(?:func\s+)(\(.+?\))/);
+    let firstParens = (match => match && match[1])(func.match(/(?:func\s+)(\(.+?\))/));
     let name = func.match(/(\w+)(?:\()/)[1];
     let secondParens = func.match(/(?:\w+)(\(.*?\))/)[1];
     let thirdParensOrString = (match => match && match[1])(func.match(/(?:\w+\(.+?\)\s+)(.+?)(?:\s+{)/));
 
-    let Ob = {};
-    Ob.name = name;
-    Ob.public = (/[A-Z]/).test(name[0]);
-    Ob.types = (matches => matches && matches.map(type => type.replace(',', '')))(secondParens.match(/(\S+)(?:,)/g));
+    let Ob         = {};
+    Ob.name        = name;
+    Ob.struct      = firstParens && firstParens.match(/(\w+)(?:\))/)[1];
+    Ob.public      = (/[A-Z]/).test(name[0]);
+    Ob.types       = (matches => matches && matches.map(type => type.replace(',', '')))(secondParens.match(/(\S+)(?:,)/g));
     Ob.returnTypes = thirdParensOrString;
 
     return Ob;
@@ -47,14 +52,32 @@ var parseFuncs = map(function (code, filename) {
     return `${Fn.public ? '+' : '-'} ${Fn.name} (${Fn.types ? Fn.types.join(', ') : ''}) : ${Fn.returnTypes || 'void'}`
   }
 
-  let output = '';
+  let stringFuncs = '';
   funcs.forEach(func => {
-    output += `${fnString(func)} \n`
-  })
-  return mainTemplate(funcsTemplate())
+    if (func.struct) {
+      structs[func.struct] = structs[func.struct] + `${fnString(func)} \n`
+    } else {
+      stringFuncs = stringFuncs + `${fnString(func)} \n`
+    }
+  });
 
+  console.log('stringFuncs', stringFuncs);
+  console.log('structs', structs);
+
+  let output = '';
+  let module_name = filename.match(/(?:.+\/)(\w+)(\.go)/)[1];
+
+  if (stringFuncs) { output += funcsTemplate(stringFuncs, funcs.length * 15) }
+  Object.keys(structs).forEach(struct_name => {
+    output += structsTemplate(struct_name, structs[struct_name], 300);
+  });
+  return output;
 });
 
+
+var wrapTemplate = map(function (code, filename) {
+  return mainTemplate(code);
+});
 
 /**
  *   
@@ -66,7 +89,8 @@ gulp.task('parse:go:funcs', [], function () {
   return gulp.src(['./src/**/*.go', '!./src/**/*_test.go'])
     .pipe(parseFuncs)
     .on('error', console.error.bind(console))
-    .pipe(ext_replace('.graphml'))
+    .pipe(concat('module.graphml'))
+    .pipe(wrapTemplate)
     .pipe(gulp.dest('./docs'));
 });
 
