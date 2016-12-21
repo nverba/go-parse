@@ -17,15 +17,14 @@ var parseFuncs = map(function (code, filename) {
   let funcs      = code.match(/^func\s+.+?{\s*$/mg) || [];
   let structs    = code.match(/(?:type\s+)(\w+)(?:\s+struct)/mg) || [];
   let interfaces = code.match(/type\s+\w+\s+interface\s+(.|\n)+?}/mg) || [];
+  let types      = code.match(/type\s+\w+\s+func.+$/mg) || [];
 
-  // console.log('interfaces', filename, interfaces)
-  
+  console.log(types)
   // Reduce array of struct matches to object of struct names with empty string value;
-  structs = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
+  structs    = structs.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)(?:\s+struct)/)[1]]: '' }), {}); 
   interfaces = interfaces.reduce((acc, val) => Object.assign({}, acc, { [val.match(/(?:type\s+)(\w+)/)[1]]: val.match(/(?:type\s+\w+\s+interface\s{)+((\n|.)+?)(?:})/)[1] }), {}); 
-  
-  console.log(interfaces)
-  
+  types      = types.map(type => type.match(/(?:type\s+)(\w+\s+func.+$)/)[1])
+
   funcs = funcs.map(func => {
 
     let firstParens = (match => match && match[1])(func.match(/(?:func\s+)(\(.+?\))/));
@@ -66,10 +65,17 @@ var parseFuncs = map(function (code, filename) {
   let output = '';
   let module_name = filename.match(/(?:.+\/)(\w+)(\.go)/)[1];
 
-  if (stringFuncs) { output += (`Module: ${ module_name } \n\nFuncs: \n${ stringFuncs } \n`) }
+  if (stringFuncs) { output += (`Module: ${ module_name } \n---------------------------------------------------------------------------------\nFuncs: \n${ stringFuncs } \n`) }
   Object.keys(structs).forEach(struct_name => {
     output += `Struct: ${ struct_name } \n${ structs[struct_name] }`                                           // structsTemplate(struct_name, structs[struct_name], 300);
   });
+  Object.keys(interfaces).forEach(interface_name => {
+    output += `Interface: ${ interface_name } \n${ interfaces[interface_name] }`                                           // structsTemplate(struct_name, structs[struct_name], 300);
+  });
+  if (types.length) { output += `\nTypes: \n` }
+  types.forEach(type => {
+    output += `${ type } \n`
+  }) 
   return output;
 });
 
