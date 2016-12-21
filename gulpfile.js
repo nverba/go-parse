@@ -79,11 +79,6 @@ var parseFuncs = map(function (code, filename) {
   return output;
 });
 
-
-var wrapTemplate = map(function (code, filename) {
-  return mainTemplate(code);
-});
-
 /**
  *   
  *  GULP TASKS
